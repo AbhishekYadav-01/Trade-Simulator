@@ -39,3 +39,60 @@
   * **CPU Load:** Typically under 20% on one core (idle between async waits).
 
 **Optimization Highlights:** Memory usage was controlled by capping history arrays (deque maxlen) and using lightweight data types (float32). Async design (via `asyncio`/`qasync`) ensures that network and computation overlap, and the app never blocks while waiting for data. NumPy arrays and list comprehensions minimize Python overhead. Pre-loading ML models from disk avoids runtime training costs. Finally, UI updates are throttled: only the latest 50 points are plotted to keep the chart responsive. Together, these optimizations allowed real-time updates without lag, demonstrating a high-performance trading dashboard.
+
+# How to run 
+
+Follow the steps below to set up and run the trade simulator project:
+
+###  Step 1: Unzip the Project
+
+Unzip the provided project folder if you haven’t already.
+
+###  Step 2: Create Python Virtual Environment
+
+```bash
+python -m venv venv
+````
+
+###  Step 3: Activate the Virtual Environment
+
+* On **Windows**:
+
+  ```bash
+  venv\Scripts\activate
+  ```
+
+* On **macOS/Linux**:
+
+  ```bash
+  source venv/bin/activate
+  ```
+
+### Step 4: Install Required Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+###  Step 5: Run the Application
+
+Make sure you are inside the **`trade_simulator`** (main project folder), then run:
+
+```bash
+python -m src.ui.main_window
+```
+
+---
+
+### 🌐 Notes
+
+* Make sure you are **connected to the internet** for live data fetching.
+* Use a **VPN** if needed to access OKX WebSocket feed (some regions may block it).
+* If the UI doesn’t show data, check console logs for WebSocket or model issues.
+
+---
+
+✅ That’s it — your real-time crypto trade simulator should now be up and running!
+
+```
+
