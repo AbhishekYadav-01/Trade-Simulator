@@ -1,12 +1,3 @@
-Great, I’ll now prepare your deliverables including:
-
-1. A comprehensive markdown documentation covering code structure, model logic, and performance optimizations.
-2. A professional-level video demo script tailored for a technical reviewer, including screen cues and talking points.
-3. Full bonus deliverables including performance analysis, benchmarking results, and optimization documentation.
-
-I’ll let you know once everything is ready.
-
-
 # Crypto Trade Simulator Documentation
 
 **System Architecture & Components:** The simulator consists of a **PyQt6 GUI frontend** and an asynchronous Python backend.  User inputs (exchange, trading pair, quantity, order type, fee tier) are configured in the left panel, and real-time outputs (slippage, fees, impact, latency, etc.) appear in the right panel.  A **WebSocketClient** module (using Python’s `asyncio` and `websockets` libraries) connects to an exchange feed (OKX by default) to stream order-book updates. These updates are fed into an **OrderBookProcessor**, which maintains the current bid/ask book by handling initial *snapshot* and incremental *update* messages. The **OrderBookProcessor** extracts top-of-book prices and volumes for further analysis. The system is event-driven: a Qt event loop (via [qasync](https://github.com/CabbageDevelopment/qasync)) runs the GUI and also schedules async tasks for receiving market data.  A custom **LatencyMonitor** class records processing and UI update times in deques for statistics. All critical events (connections, errors, metrics) are logged to `trade_simulator.log`.
