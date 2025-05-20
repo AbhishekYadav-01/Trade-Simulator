@@ -25,69 +25,6 @@
 
 **Key References:** The slippage model uses quantile regression; the market impact follows the Almgren–Chriss framework for optimal execution; logistic regression (a well-known classification method) is used for maker/taker probabilities; asynchronous event-loop design is adopted for non-blocking data handling. High-frequency trading standards emphasize low-latency processing and efficient data handling in Python.
 
-# Video Recording Script
-
-1. **Intro & UI Overview:** *Screen cue:* The narrator starts with the desktop showing the **Crypto Trade Simulator** application window (or screenshot).
-
-   * **Narration:** “Hello, I’m walking through my Crypto Trade Simulator project. On screen is the Qt GUI with controls on the left and metrics on the right. The user can select Exchange (OKX by default), trading pair (e.g. BTC-USDT), order type, size, and fee tier. Below that is a “Start Simulation” button.”
-   * *Show pointer hovering over “Exchange” dropdown, selecting OKX, and other fields.* Mention default values.
-
-2. **Starting Simulation / Data Feed:** *Screen cue:* Click the **Start Simulation** button.
-
-   * **Narration:** “Now I start the simulation. The app connects via WebSocket to OKX and begins streaming order-book updates. The red status indicator turns green (‘Connected’).”
-   * *Show status label change. In the logs, “Connected to OKX” appears.* Emphasize real-time connectivity.
-
-3. **Live Output:** *Screen cue:* The Slippage, Fees, Impact, and Total Cost labels (top right) update as data arrives. The **Mid-Price Over Time** chart plots incoming mid prices. The **Latency Chart** shows processing (blue) vs UI (orange) latency.
-
-   * **Narration:** “As data flows in, you see the mid price chart updating in real time. Slippage and cost estimates update (e.g. “Slippage 4.2% (\$4.23)”, “Impact \$1.02”, etc). The latency chart plots the lightweight processing time (blue) versus UI redraw time (orange). Typically processing is under a millisecond, while UI updates are on the order of tens of ms.”
-   * *Point to each element as described.* Note how the **Event Log** shows time-stamped actions.
-
-4. **Synthetic Feed & Control:** *Screen cue:* Check “Synthetic Feed Mode” box and restart simulation.
-
-   * **Narration:** “There’s also a synthetic data mode. I’ll toggle it on. Now the app generates random order-book snapshots at 100 ms intervals. This is useful for load testing. You can see the mid-price chart smoothly random-walking, and metrics updating predictably (no real exchange needed).”
-   * *Show log “Synthetic feed mode enabled”.* Optionally uncheck and mention it.
-
-5. **Code Structure Overview:** *Screen cue:* Alt+Tab to code editor (e.g. VSCode) showing project files tree.
-
-   * **Narration:** “Under the hood, the code is modular. The `src/core` folder contains core logic: `websocket_client.py` handles the exchange API connections, `data_pipeline.py` maintains the live order book, and `models.py` defines our trading models. The `src/ui/main_window.py` defines the PyQt GUI and orchestrates running the async event loop with `qasync`.”
-   * *Highlight each file or directory.* Scroll to `models.py`.
-
-6. **Slippage Model Implementation:** *Screen cue:* Open `src/core/models.py` to the `SlippageModel` class.
-
-   * **Narration:** “Here’s the SlippageModel. It uses scikit-learn’s `QuantileRegressor` to predict percentage slippage. We feed it the volumes at the top 10 bids and asks plus the order size. Quantile regression is robust to outliers. If a trained model exists (in `data/slippage_model.pkl`), it loads; otherwise it can train a dummy model.”
-   * *Underline the lines computing `bid_vols`, `ask_vols`, and calling `model.predict`.*
-
-7. **Market Impact (Almgren-Chriss):** *Screen cue:* Scroll to `AlmgrenChrissModel` in the same file.
-
-   * **Narration:** “The Almgren-Chriss model calculates market impact cost. It keeps a rolling window of mid-prices and calculates volatility. The formula combines √(order/market\_volume) term and a linear term. This is a standard approach to estimate trade execution cost.”
-   * *Point to `volatility = np.std(returns)` and the final impact formula.* Mention the risk-aversion gamma and permanent impact epsilon parameters.
-
-8. **Maker/Taker Prediction:** *Screen cue:* Scroll to `MakerTakerModel` class.
-
-   * **Narration:** “This model uses logistic regression to predict the probability of the trade being a maker vs taker order. It’s trained on simple mock data here (sum of features > 1). In UI code, we normalize mid-price and size and call `model.predict_proba` to get a maker/taker percentage.”
-   * *Highlight `predict_proba` usage.* Note that logistic regression is a standard binary classifier in scikit-learn.
-
-9. **WebSocket Client Details:** *Screen cue:* Open `src/core/websocket_client.py`.
-
-   * **Narration:** “The WebSocketClient class handles connecting and subscribing. It supports OKX, Binance, and Coinbase. For OKX, it sends `{"op":"subscribe", "args":[... "books", instId:symbol...]}`. Received messages are parsed: on OKX the `action` field is “snapshot” or “update”, and the raw data is forwarded to the OrderBookProcessor. The code runs in an async loop to avoid blocking the GUI.”
-   * *Show lines of `_subscribe` and `receive_data`. Emphasize `async def connect()` and reconnection logic with `while True` and sleeps on error.*
-
-10. **Latency Monitoring & UI Update:** *Screen cue:* Show `src/core/performance.py` and `main_window.py` where latency is recorded.
-
-    * **Narration:** “Performance timing is implemented here. We record `time.time()` before and after updates. The LatencyMonitor stores processing and UI times in deques and computes averages. In `update_ui`, after updating the charts and labels, we record the UI update duration. These stats drive the on-screen labels and charts.”
-    * *Point to `record_processing`, `record_end_to_end`, and `record_ui_update` calls.*
-
-11. **Performance Improvements:** *Screen cue:* Show parts of code or comments related to optimization (e.g. using NumPy, async loops).
-
-    * **Narration:** “Key optimizations include using NumPy arrays for volume data (more efficient than Python lists), limiting history lengths to avoid slowdowns, and performing all I/O asynchronously. The app avoids busy-waiting so CPU usage is low between updates. For example, we don’t redraw charts more than needed and clear old points. Logging is also lightweight (writes are buffered). These measures keep latency minimal, as required for a trading demo.”
-    * *If time permits, display profiler output or CPU usage metric (e.g. via `psutil` in status).*
-
-12. **Wrapping Up:** *Screen cue:* Back to UI or a slides title.
-
-    * **Narration:** “In summary, this simulator demonstrates an end-to-end async trading dashboard: a real-time GUI, live data integration, and quantitative models. It showcases architecture best practices (modularity, async IO) and performance monitoring. Thank you for watching.”
-
-Each segment’s narration should be practiced to match the on-screen focus. Use the UI screenshot (or live UI) to visually cue the viewer as described.
-
 # Bonus: Performance and Optimization Report
 
 **Throughput & Latency:** Over 1000 simulated updates at 10 Hz, the system achieved \~10 messages per second. Measured *processing latency* (model computations per update) averaged **0.3 ms** (median \~0.28 ms), reflecting fast vectorized NumPy operations. *UI update latency* (Qt redraw, chart updates) averaged **100–120 ms**, fluctuating with chart complexity. Thus the total end-to-end latency averaged \~120 ms with peaks around 200 ms under load. These values align with expectations for a Python GUI: the numerical computations are near-instant, while rendering dominates latency. The LatencyMonitor’s end-to-end average (shown in UI) thus tracked near 100–150 ms.
